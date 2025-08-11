@@ -1,0 +1,519 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/providers.dart' as providers;
+import '../models/product_models.dart';
+import 'category_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final List<CategoryData> categories = [
+    CategoryData(
+      id: 'cat1',
+      name: 'KITCHEN ESSENTIALS',
+      products: [
+        ProductData(
+          id: 'kitchen1',
+          name: 'Pickles',
+          price: 85.0,
+          image: '🥫',
+          unit: 'bottle',
+        ),
+        ProductData(
+          id: 'kitchen2',
+          name: 'Dalia',
+          price: 45.0,
+          image: '🌾',
+          unit: 'kg',
+        ),
+        ProductData(
+          id: 'kitchen3',
+          name: 'Moong Dal',
+          price: 120.0,
+          image: '🫘',
+          unit: 'kg',
+        ),
+      ],
+    ),
+    CategoryData(
+      id: 'cat2',
+      name: 'BREAKFAST ESSENTIALS',
+      products: [
+        ProductData(
+          id: 'breakfast1',
+          name: 'Poha',
+          price: 55.0,
+          image: '🍚',
+          unit: 'kg',
+        ),
+        ProductData(
+          id: 'breakfast2',
+          name: 'Sooji',
+          price: 45.0,
+          image: '🌾',
+          unit: 'kg',
+        ),
+        ProductData(
+          id: 'breakfast3',
+          name: 'Oats',
+          price: 75.0,
+          image: '🥣',
+          unit: 'kg',
+        ),
+      ],
+    ),
+    CategoryData(
+      id: 'cat3',
+      name: 'SNACKS',
+      products: [
+        ProductData(
+          id: 'snack1',
+          name: 'Biscuits',
+          price: 25.0,
+          image: '🍪',
+          unit: 'pack',
+        ),
+        ProductData(
+          id: 'snack2',
+          name: 'Namkeen',
+          price: 45.0,
+          image: '🥨',
+          unit: 'pack',
+        ),
+      ],
+    ),
+    CategoryData(
+      id: 'cat4',
+      name: 'HOME CARE',
+      products: [
+        ProductData(
+          id: 'home1',
+          name: 'Detergent',
+          price: 185.0,
+          image: '📦',
+          unit: 'kg',
+        ),
+        ProductData(
+          id: 'home2',
+          name: 'Dish Washer Liquid',
+          price: 95.0,
+          image: '🧴',
+          unit: 'bottle',
+        ),
+        ProductData(
+          id: 'home3',
+          name: 'Vim Bar',
+          price: 15.0,
+          image: '🧼',
+          unit: 'piece',
+        ),
+        ProductData(
+          id: 'home4',
+          name: 'Floor Cleaner',
+          price: 125.0,
+          image: '🧴',
+          unit: 'bottle',
+        ),
+      ],
+    ),
+    CategoryData(
+      id: 'cat5',
+      name: 'PERSONAL CARE',
+      products: [
+        ProductData(
+          id: 'personal1',
+          name: 'Soap',
+          price: 45.0,
+          image: '🧼',
+          unit: 'piece',
+        ),
+        ProductData(
+          id: 'personal2',
+          name: 'Body Wash',
+          price: 175.0,
+          image: '🧴',
+          unit: 'bottle',
+        ),
+        ProductData(
+          id: 'personal3',
+          name: 'Moisturizer',
+          price: 225.0,
+          image: '🧴',
+          unit: 'bottle',
+        ),
+        ProductData(
+          id: 'personal4',
+          name: 'Sunscreen',
+          price: 395.0,
+          image: '🧴',
+          unit: 'bottle',
+        ),
+      ],
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('GreenGrab'),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: ProductSearchDelegate(categories),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              context.go('/cart');
+            },
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          return CategorySection(category: category);
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              // Already on home
+              break;
+            case 1:
+              context.go('/cart');
+              break;
+            case 2:
+              context.go('/profile');
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Cart',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CategorySection extends StatelessWidget {
+  final CategoryData category;
+
+  const CategorySection({super.key, required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CategoryScreen(category: category),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  category.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.green,
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: category.products.length,
+            itemBuilder: (context, index) {
+              final product = category.products[index];
+              return ProductCard(product: product);
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+class ProductCard extends StatelessWidget {
+  final ProductData product;
+
+  const ProductCard({super.key, required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 80,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Center(
+              child: Text(
+                product.image,
+                style: const TextStyle(fontSize: 40),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '₹${product.price}/${product.unit}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 32,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      try {
+                        final cartProvider = Provider.of<providers.CartProvider>(
+                          context,
+                          listen: false,
+                        );
+                        cartProvider.addToCart(providers.ProductData(
+                          id: product.id,
+                          name: product.name,
+                          price: product.price,
+                          image: product.image,
+                          unit: product.unit,
+                        ));
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${product.name} added to cart!'),
+                            duration: const Duration(seconds: 1),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to add item to cart'),
+                            duration: Duration(seconds: 1),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'ADD',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ProductSearchDelegate extends SearchDelegate<ProductData?> {
+  final List<CategoryData> categories;
+
+  ProductSearchDelegate(this.categories);
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  Widget _buildSearchResults(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(
+        child: Text('Enter a product name to search'),
+      );
+    }
+
+    final results = categories
+        .expand((category) => category.products)
+        .where((product) =>
+            product.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    if (results.isEmpty) {
+      return const Center(
+        child: Text('No products found'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final product = results[index];
+        return ListTile(
+          leading: Text(
+            product.image,
+            style: const TextStyle(fontSize: 24),
+          ),
+          title: Text(product.name),
+          subtitle: Text('₹${product.price}/${product.unit}'),
+          trailing: ElevatedButton(
+            onPressed: () {
+              try {
+                final cartProvider = Provider.of<providers.CartProvider>(
+                  context,
+                  listen: false,
+                );
+                cartProvider.addToCart(providers.ProductData(
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image,
+                  unit: product.unit,
+                ));
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${product.name} added to cart!'),
+                    duration: const Duration(seconds: 1),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to add item to cart'),
+                    duration: Duration(seconds: 1),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('ADD'),
+          ),
+        );
+      },
+    );
+  }
+}
