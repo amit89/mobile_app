@@ -21,17 +21,26 @@ void main() async {
   } catch (e) {
     print('Error initializing Firebase: $e');
   }
+  
   runApp(
     MultiProvider(
       providers: [
+        // First, create the ProductProvider
         ChangeNotifierProvider(
+          create: (_) => products.ProductProvider(),
+        ),
+        // Then, create the CartProvider using the ProductProvider
+        ChangeNotifierProxyProvider<products.ProductProvider, cart.CartProvider>(
           create: (_) => cart.CartProvider(),
+          update: (_, productProvider, previousCartProvider) {
+            final cartProvider = previousCartProvider ?? cart.CartProvider();
+            cartProvider.setProductProvider(productProvider);
+            print('Main: Setting ProductProvider in CartProvider');
+            return cartProvider;
+          },
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => products.ProductProvider(),
         ),
       ],
       child: MyApp(),
@@ -40,6 +49,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  
   MyApp({super.key});
 
   final GoRouter _router = GoRouter(
@@ -55,7 +66,11 @@ class MyApp extends StatelessWidget {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) {
+          // Load categories when navigating to home
+          Provider.of<products.ProductProvider>(context, listen: false).loadCategories();
+          return const HomeScreen();
+        },
       ),
       GoRoute(
         path: '/cart',
@@ -78,26 +93,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => cart.CartProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: MaterialApp.router(
-        title: 'GreenGrab',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primaryColor: Colors.green,
-          primarySwatch: Colors.green,
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-          ),
-          useMaterial3: true,
+    return MaterialApp.router(
+      title: 'GreenGrab',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: Colors.green,
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
         ),
-        routerConfig: _router,
+        useMaterial3: true,
       ),
+      routerConfig: _router,
     );
   }
 }

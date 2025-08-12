@@ -8,6 +8,7 @@ class ProductData {
   final String unit;
   final String categoryId;
   final bool isAvailable;
+  final int quantity;
 
   ProductData({
     required this.id,
@@ -17,9 +18,24 @@ class ProductData {
     required this.unit,
     required this.categoryId,
     this.isAvailable = true,
+    this.quantity = 0,
   });
 
   factory ProductData.fromFirebase(Map<String, dynamic> data) {
+    // Handle quantity correctly regardless of its type in Firestore
+    int quantity = 0;
+    if (data['quantity'] != null) {
+      if (data['quantity'] is int) {
+        quantity = data['quantity'];
+      } else if (data['quantity'] is double) {
+        quantity = data['quantity'].toInt();
+      } else if (data['quantity'] is String) {
+        quantity = int.tryParse(data['quantity']) ?? 0;
+      }
+    }
+    
+    print('Loading product ${data['name']} from Firebase, raw quantity type: ${data['quantity']?.runtimeType}, raw value: ${data['quantity']}, parsed quantity: $quantity');
+    
     return ProductData(
       id: data['id'] ?? '',
       name: data['name'] ?? '',
@@ -28,6 +44,7 @@ class ProductData {
       unit: data['unit'] ?? '',
       categoryId: data['categoryId'] ?? '',
       isAvailable: data['isAvailable'] ?? true,
+      quantity: quantity,
     );
   }
 
@@ -40,6 +57,7 @@ class ProductData {
       'unit': unit,
       'categoryId': categoryId,
       'isAvailable': isAvailable,
+      'quantity': quantity,
     };
   }
 }

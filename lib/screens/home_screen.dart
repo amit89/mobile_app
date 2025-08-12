@@ -20,7 +20,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Load categories when the screen initializes
-    Provider.of<products.ProductProvider>(context, listen: false).loadCategories();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Use this to make sure we're calling after the widget is fully built
+      final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
+      productProvider.loadCategories();
+      
+      // Make sure the cart provider has the product provider
+      final cartProvider = Provider.of<cart.CartProvider>(context, listen: false);
+      print('HomeScreen: Ensuring CartProvider has ProductProvider reference');
+      cartProvider.setProductProvider(productProvider);
+    });
   }
 
   @override
@@ -334,18 +343,57 @@ class ProductCard extends StatelessWidget {
                     return SizedBox(
                       width: double.infinity,
                       height: 32,
-                      child: quantity == 0
+                      child: product.quantity <= 0
+                        ? Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'OUT OF STOCK',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : quantity == 0
                           ? ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 try {
-                                  cartProvider.addToCart(cart.ProductData(
+                                  // Ensure the cart provider has a product provider reference
+                                  final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
+                                  cartProvider.setProductProvider(productProvider);
+                                  
+                                  bool success = await cartProvider.addToCart(cart.ProductData(
                                     id: product.id,
                                     name: product.name,
                                     price: product.price,
                                     image: product.image,
                                     unit: product.unit,
                                     categoryId: product.categoryId,
+                                    quantity: product.quantity,
                                   ));
+                                  
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${product.name} added to cart!'),
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Sorry, ${product.name} is out of stock'),
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -392,15 +440,30 @@ class ProductCard extends StatelessWidget {
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.add, size: 16),
-                                    onPressed: () {
-                                      cartProvider.addToCart(cart.ProductData(
+                                    onPressed: () async {
+                                      // Ensure the cart provider has a product provider reference
+                                      final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
+                                      cartProvider.setProductProvider(productProvider);
+                                      
+                                      bool success = await cartProvider.addToCart(cart.ProductData(
                                         id: product.id,
                                         name: product.name,
                                         price: product.price,
                                         image: product.image,
                                         unit: product.unit,
                                         categoryId: product.categoryId,
+                                        quantity: product.quantity,
                                       ));
+                                      
+                                      if (!success) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Sorry, ${product.name} is out of stock'),
+                                            duration: const Duration(seconds: 1),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      }
                                     },
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
@@ -504,6 +567,10 @@ class ProductSearchDelegate extends SearchDelegate<ProductData?> {
                     ? ElevatedButton(
                         onPressed: () {
                           try {
+                            // Ensure the cart provider has a product provider reference
+                            final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
+                            cartProvider.setProductProvider(productProvider);
+                            
                             cartProvider.addToCart(cart.ProductData(
                               id: product.id,
                               name: product.name,
@@ -558,6 +625,10 @@ class ProductSearchDelegate extends SearchDelegate<ProductData?> {
                             IconButton(
                               icon: const Icon(Icons.add, size: 16),
                               onPressed: () {
+                                // Ensure the cart provider has a product provider reference
+                                final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
+                                cartProvider.setProductProvider(productProvider);
+                                
                                 cartProvider.addToCart(cart.ProductData(
                                   id: product.id,
                                   name: product.name,

@@ -18,6 +18,7 @@ class _AdminScreenState extends State<AdminScreen> {
   double _price = 0.0;
   String _image = '';
   String _unit = '';
+  int _quantity = 0;
   String _selectedCategoryId = '';
 
   @override
@@ -55,6 +56,83 @@ class _AdminScreenState extends State<AdminScreen> {
     });
   }
 
+  void _showEditQuantityDialog(BuildContext context, ProductData product) {
+    int quantity = product.quantity;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Quantity'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Current quantity for ${product.name}: ${product.quantity}'),
+            const SizedBox(height: 16),
+            TextFormField(
+              initialValue: product.quantity.toString(),
+              decoration: const InputDecoration(
+                labelText: 'New Quantity',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                quantity = int.tryParse(value) ?? product.quantity;
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a quantity';
+                }
+                if (int.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (quantity != product.quantity) {
+                final productProvider = Provider.of<products.ProductProvider>(
+                  context,
+                  listen: false,
+                );
+                
+                // Create updated product with new quantity
+                final updatedProduct = ProductData(
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image,
+                  unit: product.unit,
+                  categoryId: product.categoryId,
+                  quantity: quantity,
+                );
+                
+                // Update product in provider/database
+                productProvider.updateProduct(updatedProduct);
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Quantity updated to $quantity'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+              Navigator.of(context).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+  
   void _initializeDefaultCategories(products.ProductProvider productProvider) async {
     final defaultCategories = [
       'Kitchen Essentials',
@@ -119,6 +197,7 @@ class _AdminScreenState extends State<AdminScreen> {
     _price = 0.0;
     _image = '';
     _unit = '';
+    _quantity = 0;
     
     // Ensure we have the latest categories
     final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
@@ -236,6 +315,25 @@ class _AdminScreenState extends State<AdminScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   decoration: const InputDecoration(
+                    labelText: 'Quantity',
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter available quantity',
+                  ),
+                  keyboardType: TextInputType.number,
+                  onSaved: (value) => _quantity = int.tryParse(value ?? '0') ?? 0,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter quantity';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Please enter a valid number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  decoration: const InputDecoration(
                     labelText: 'Image (emoji)',
                     border: OutlineInputBorder(),
                     hintText: 'Enter an emoji (e.g., 🍎)',
@@ -273,6 +371,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   image: _image,
                   unit: _unit,
                   categoryId: _selectedCategoryId,
+                  quantity: _quantity,
                 );
 
                 try {
@@ -392,19 +491,38 @@ class _AdminScreenState extends State<AdminScreen> {
                                             color: Colors.grey[600],
                                           ),
                                         ),
+                                        Text(
+                                          'Quantity: ${product.quantity}${product.quantity <= 0 ? " (Out of Stock)" : ""}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: product.quantity <= 0 ? Colors.red : Colors.grey[600],
+                                            fontWeight: product.quantity <= 0 ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
                                       ],
                                     ),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () {
-                                        productProvider.deleteProduct(product.id);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Product deleted'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      },
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit),
+                                          onPressed: () {
+                                            _showEditQuantityDialog(context, product);
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete),
+                                          onPressed: () {
+                                            productProvider.deleteProduct(product.id);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Product deleted'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                     isThreeLine: true,
                                   ),

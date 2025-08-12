@@ -33,18 +33,28 @@ class FirebaseService {
 
   // Add a new product
   Future<void> addProduct(ProductData product) {
+    print('Adding product to Firebase: ${product.name}, quantity: ${product.quantity}');
+    
+    final productMap = product.toMap();
+    print('Product data for Firebase: $productMap');
+    
     return _firestore
         .collection('products')
         .doc(product.id)
-        .set(product.toMap());
+        .set(productMap);
   }
 
   // Update a product
   Future<void> updateProduct(ProductData product) {
+    print('Updating product in Firebase: ${product.name}, quantity: ${product.quantity}');
+    
+    final productMap = product.toMap();
+    print('Updated product data for Firebase: $productMap');
+    
     return _firestore
         .collection('products')
         .doc(product.id)
-        .update(product.toMap());
+        .update(productMap);
   }
 
   // Get products that were previously soft-deleted (isAvailable = false)

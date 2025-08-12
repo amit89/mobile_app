@@ -62,6 +62,54 @@ class ProductProvider with ChangeNotifier {
     }
   }
   
+  Future<void> updateProductQuantity(String productId, int newQuantity) async {
+    try {
+      print('Updating product quantity: productId=$productId, newQuantity=$newQuantity');
+      
+      bool productFound = false;
+      // Find the product in categories
+      for (var category in _categories) {
+        final productIndex = category.products.indexWhere((p) => p.id == productId);
+        if (productIndex != -1) {
+          final product = category.products[productIndex];
+          print('Found product: ${product.name} (current quantity: ${product.quantity})');
+          productFound = true;
+          
+          // Found the product, create updated version with new quantity
+          final updatedProduct = ProductData(
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            unit: product.unit,
+            categoryId: product.categoryId,
+            isAvailable: product.isAvailable,
+            quantity: newQuantity,
+          );
+          
+          print('Updating product in Firebase with quantity: $newQuantity');
+          
+          // Update in Firebase
+          await _firebaseService.updateProduct(updatedProduct);
+          
+          // Update the product in the local cache too
+          category.products[productIndex] = updatedProduct;
+          
+          notifyListeners();
+          print('Product quantity updated successfully');
+          break;
+        }
+      }
+      
+      if (!productFound) {
+        print('ERROR: Product with ID $productId not found in any category!');
+      }
+    } catch (e) {
+      print('Error updating product quantity: $e');
+      rethrow;
+    }
+  }
+
   // Delete all products that were previously soft-deleted (isAvailable = false)
   Future<void> cleanupSoftDeletedProducts() async {
     try {

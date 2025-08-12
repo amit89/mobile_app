@@ -116,14 +116,26 @@ class CartScreen extends StatelessWidget {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.add),
-                                  onPressed: () {
-                                    cartProvider.addToCart(cart.ProductData(
+                                  onPressed: () async {
+                                    bool success = await cartProvider.addToCart(cart.ProductData(
                                       id: cartItem.id,
                                       name: cartItem.name,
                                       price: cartItem.price,
                                       image: cartItem.image,
                                       unit: cartItem.unit,
+                                      // Use a reasonable default quantity for items already in cart
+                                      quantity: 10,
                                     ));
+                                    
+                                    if (!success) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Sorry, ${cartItem.name} is out of stock'),
+                                          duration: const Duration(seconds: 1),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
                                   },
                                 ),
                               ],

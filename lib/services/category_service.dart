@@ -6,6 +6,7 @@ class CategoryService {
 
   // Get all categories
   Stream<List<CategoryData>> getCategories() {
+    print('CategoryService: Getting all categories');
     return _firestore
         .collection('categories')
         .where('isAvailable', isEqualTo: true)
@@ -15,26 +16,41 @@ class CategoryService {
       
       // If no categories found, return empty list
       if (snapshot.docs.isEmpty) {
+        print('CategoryService: No categories found');
         return categories;
       }
+      
+      print('CategoryService: Found ${snapshot.docs.length} categories');
       
       for (var doc in snapshot.docs) {
         var categoryData = doc.data();
         categoryData['id'] = doc.id;  // Add the Firestore document ID to the data
         
+        print('CategoryService: Loading products for category: ${categoryData['name']}');
+        
         // Get products for this category
         var productsSnapshot = await _firestore
             .collection('products')
             .where('categoryId', isEqualTo: doc.id)
-            .get();  // Get all products, including those that might be soft-deleted
+            .where('isAvailable', isEqualTo: true)  // Only get available products
+            .get();
 
-        // Filter out any products that might still have isAvailable set to false
-        List<ProductData> products = productsSnapshot.docs
-            .map((productDoc) => ProductData.fromFirebase(productDoc.data()))
-            .where((product) => product.isAvailable) // Add this filter to ensure only available products
-            .toList();
+        // Process product data
+        List<ProductData> products = [];
+        for (var productDoc in productsSnapshot.docs) {
+          var productData = productDoc.data();
+          productData['id'] = productDoc.id;  // Add the Firestore document ID
+          
+          // Create product object
+          var product = ProductData.fromFirebase(productData);
+          products.add(product);
+        }
 
-        print('Found ${products.length} products for category ${categoryData['name']}');
+        // Print debugging info about products and quantities
+        print('CategoryService: Found ${products.length} products for category ${categoryData['name']}');
+        for (var product in products) {
+          print('CategoryService: ${product.name}: quantity=${product.quantity}, available=${product.isAvailable}');
+        }
         
         categories.add(CategoryData.fromFirebase(categoryData, products));
       }

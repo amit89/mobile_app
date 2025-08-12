@@ -117,26 +117,37 @@ class ProductGridCard extends StatelessWidget {
                     builder: (context, cartProvider, _) {
                       final quantity = cartProvider.getQuantity(product.id);
                       
-                      return quantity == 0
+                      return (quantity == 0 && product.quantity > 0)
                         ? ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               try {
-                                cartProvider.addToCart(cart.ProductData(
+                                bool success = await cartProvider.addToCart(cart.ProductData(
                                   id: product.id,
                                   name: product.name,
                                   price: product.price,
                                   image: product.image,
                                   unit: product.unit,
                                   categoryId: product.categoryId,
+                                  quantity: product.quantity,
                                 ));
                                 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${product.name} added to cart!'),
-                                    duration: const Duration(seconds: 1),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('${product.name} added to cart!'),
+                                      duration: const Duration(seconds: 1),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Sorry, ${product.name} is out of stock'),
+                                      duration: const Duration(seconds: 1),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -159,7 +170,23 @@ class ProductGridCard extends StatelessWidget {
                               style: TextStyle(fontSize: 12),
                             ),
                           )
-                        : Container(
+                        : product.quantity <= 0
+                          ? Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'OUT OF STOCK',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : Container(
                             decoration: BoxDecoration(
                               border: Border.all(color: Theme.of(context).primaryColor),
                               borderRadius: BorderRadius.circular(8),
@@ -183,15 +210,26 @@ class ProductGridCard extends StatelessWidget {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.add, size: 16),
-                                  onPressed: () {
-                                    cartProvider.addToCart(cart.ProductData(
+                                  onPressed: () async {
+                                    bool success = await cartProvider.addToCart(cart.ProductData(
                                       id: product.id,
                                       name: product.name,
                                       price: product.price,
                                       image: product.image,
                                       unit: product.unit,
                                       categoryId: product.categoryId,
+                                      quantity: product.quantity,
                                     ));
+                                    
+                                    if (!success) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Sorry, ${product.name} is out of stock'),
+                                          duration: const Duration(seconds: 1),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
                                   },
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
