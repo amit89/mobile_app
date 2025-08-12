@@ -12,20 +12,30 @@ class CategoryService {
         .snapshots()
         .asyncMap((snapshot) async {
       List<CategoryData> categories = [];
+      
+      // If no categories found, return empty list
+      if (snapshot.docs.isEmpty) {
+        return categories;
+      }
+      
       for (var doc in snapshot.docs) {
         var categoryData = doc.data();
+        categoryData['id'] = doc.id;  // Add the Firestore document ID to the data
         
         // Get products for this category
         var productsSnapshot = await _firestore
             .collection('products')
             .where('categoryId', isEqualTo: doc.id)
-            .where('isAvailable', isEqualTo: true)
-            .get();
+            .get();  // Get all products, including those that might be soft-deleted
 
+        // Filter out any products that might still have isAvailable set to false
         List<ProductData> products = productsSnapshot.docs
             .map((productDoc) => ProductData.fromFirebase(productDoc.data()))
+            .where((product) => product.isAvailable) // Add this filter to ensure only available products
             .toList();
 
+        print('Found ${products.length} products for category ${categoryData['name']}');
+        
         categories.add(CategoryData.fromFirebase(categoryData, products));
       }
       return categories;
@@ -33,7 +43,7 @@ class CategoryService {
   }
 
   // Add a new category
-  Future<DocumentReference> addCategory(CategoryData category) {
+  Future<DocumentReference<Map<String, dynamic>>> addCategory(CategoryData category) {
     return _firestore.collection('categories').add(category.toMap());
   }
 

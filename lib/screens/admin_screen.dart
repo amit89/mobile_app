@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../models/product_models.dart';
 import '../providers/product_provider.dart' as products;
+import '../widgets/common_app_bar.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -27,11 +28,14 @@ class _AdminScreenState extends State<AdminScreen> {
       final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
       
       try {
-        // Load existing categories first
+        // Clean up any soft-deleted products first
+        productProvider.cleanupSoftDeletedProducts();
+        
+        // Load existing categories
         productProvider.loadCategories();
         
         // Check after a short delay if categories were loaded
-        Future.delayed(const Duration(milliseconds: 500), () {
+        Future.delayed(const Duration(milliseconds: 1000), () {
           print('Categories loaded: ${productProvider.categories.length}');
           if (productProvider.categories.isEmpty) {
             print('No categories found, initializing defaults');
@@ -67,16 +71,32 @@ class _AdminScreenState extends State<AdminScreen> {
     List<CategoryData> newCategories = [];
     
     for (var categoryName in defaultCategories) {
+      // Create a category with empty ID - Firestore will assign the ID
       final category = CategoryData(
-        id: 'cat_${DateTime.now().millisecondsSinceEpoch}_${defaultCategories.indexOf(categoryName)}',
+        id: '',  // This will be replaced by Firestore document ID
         name: categoryName,
         products: [],
       );
       
       try {
-        await productProvider.addCategory(category);
-        newCategories.add(category);
-        print('Added category: ${category.name}');
+        // Add the category to Firestore and get the document reference
+        final docRef = await productProvider.addCategory(category);
+        final firestoreId = docRef.id;
+        
+        print('Added category: ${category.name} with Firestore ID: $firestoreId');
+        
+        // Create an updated category with the Firestore ID
+        final updatedCategory = CategoryData(
+          id: firestoreId,
+          name: categoryName,
+          products: [],
+        );
+        
+        // Update the category in Firestore with its own ID
+        await productProvider.updateCategory(updatedCategory);
+        
+        newCategories.add(updatedCategory);
+        
         // Add a small delay between category additions
         await Future.delayed(const Duration(milliseconds: 300));
       } catch (e) {
@@ -94,12 +114,26 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   void _showAddProductDialog(BuildContext context) {
+    // Reset form fields
+    _name = '';
+    _price = 0.0;
+    _image = '';
+    _unit = '';
+    
     // Ensure we have the latest categories
     final productProvider = Provider.of<products.ProductProvider>(context, listen: false);
     
     // If categories are empty, try to load them again
     if (productProvider.categories.isEmpty) {
       productProvider.loadCategories();
+    }
+    
+    // Validate selected category ID against available categories
+    if (productProvider.categories.isNotEmpty) {
+      bool categoryExists = productProvider.categories.any((c) => c.id == _selectedCategoryId);
+      if (!categoryExists) {
+        _selectedCategoryId = productProvider.categories.first.id;
+      }
     }
     
     showDialog(
@@ -116,13 +150,16 @@ class _AdminScreenState extends State<AdminScreen> {
                   builder: (context, productProvider, _) {
                     print('Categories available: ${productProvider.categories.length}');
                     
-                    // If we have categories but no selection, select the first one
-                    if (_selectedCategoryId.isEmpty && productProvider.categories.isNotEmpty) {
+                    // Reset selection if categories change and current selection is not valid
+                    if (productProvider.categories.isNotEmpty && 
+                        !productProvider.categories.any((c) => c.id == _selectedCategoryId)) {
                       _selectedCategoryId = productProvider.categories.first.id;
                     }
                     
                     return DropdownButtonFormField<String>(
-                      value: _selectedCategoryId.isNotEmpty ? _selectedCategoryId : null,
+                      value: productProvider.categories.any((c) => c.id == _selectedCategoryId) 
+                             ? _selectedCategoryId 
+                             : null,
                       decoration: const InputDecoration(
                         labelText: 'Category',
                         border: OutlineInputBorder(),
@@ -274,17 +311,9 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // Navigate to the home screen using GoRouter
-            context.go('/home');
-          },
-        ),
+      appBar: CommonAppBar(
+        title: 'Admin Dashboard',
+        showBackButton: true,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddProductDialog(context),
@@ -299,50 +328,122 @@ class _AdminScreenState extends State<AdminScreen> {
             );
           }
 
+          // Create a list of all products across all categories
+          final allProducts = <ProductData>[];
+          for (var category in productProvider.categories) {
+            allProducts.addAll(category.products);
+          }
+          
+          print('All products count: ${allProducts.length}');
+          
+          // Sort all products by name for better organization
+          allProducts.sort((a, b) => a.name.compareTo(b.name));
+
           return DefaultTabController(
-            length: productProvider.categories.length,
+            // +1 for the "Everything" tab
+            length: productProvider.categories.length + 1,
             child: Column(
               children: [
                 TabBar(
                   isScrollable: true,
-                  tabs: productProvider.categories.map((category) {
-                    return Tab(text: category.name);
-                  }).toList(),
+                  tabs: [
+                    // Add "Everything" tab first
+                    const Tab(text: "Everything"),
+                    // Then add the rest of the category tabs
+                    ...productProvider.categories.map((category) {
+                      return Tab(text: category.name);
+                    }).toList(),
+                  ],
                   labelColor: Theme.of(context).primaryColor,
                 ),
                 Expanded(
                   child: TabBarView(
-                    children: productProvider.categories.map((category) {
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: category.products.length,
-                        itemBuilder: (context, index) {
-                          final product = category.products[index];
-                          return Card(
-                            child: ListTile(
-                              leading: Text(
-                                product.image,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                              title: Text(product.name),
-                              subtitle: Text('₹${product.price}/${product.unit}'),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  productProvider.deleteProduct(product.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Product deleted'),
-                                      backgroundColor: Colors.red,
+                    children: [
+                      // "Everything" tab content
+                      allProducts.isEmpty
+                          ? const Center(child: Text('No products available'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: allProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = allProducts[index];
+                                // Find the category name for this product
+                                final categoryName = productProvider.categories
+                                    .firstWhere(
+                                      (cat) => cat.id == product.categoryId,
+                                      orElse: () => CategoryData(id: '', name: 'Unknown', products: []),
+                                    )
+                                    .name;
+                                
+                                return Card(
+                                  child: ListTile(
+                                    leading: Text(
+                                      product.image,
+                                      style: const TextStyle(fontSize: 24),
                                     ),
-                                  );
-                                },
-                              ),
+                                    title: Text(product.name),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('₹${product.price}/${product.unit}'),
+                                        Text('Category: $categoryName', 
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () {
+                                        productProvider.deleteProduct(product.id);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Product deleted'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    isThreeLine: true,
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      );
-                    }).toList(),
+                      // Individual category tabs
+                      ...productProvider.categories.map((category) {
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: category.products.length,
+                          itemBuilder: (context, index) {
+                            final product = category.products[index];
+                            return Card(
+                              child: ListTile(
+                                leading: Text(
+                                  product.image,
+                                  style: const TextStyle(fontSize: 24),
+                                ),
+                                title: Text(product.name),
+                                subtitle: Text('₹${product.price}/${product.unit}'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {
+                                    productProvider.deleteProduct(product.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Product deleted'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ],
                   ),
                 ),
               ],

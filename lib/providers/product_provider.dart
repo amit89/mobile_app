@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_models.dart';
 import '../services/firebase_service.dart';
 import '../services/category_service.dart';
@@ -60,10 +61,26 @@ class ProductProvider with ChangeNotifier {
       rethrow;
     }
   }
-
-  Future<void> addCategory(CategoryData category) async {
+  
+  // Delete all products that were previously soft-deleted (isAvailable = false)
+  Future<void> cleanupSoftDeletedProducts() async {
     try {
-      await _categoryService.addCategory(category);
+      // Get all products that are marked as not available
+      final softDeletedProducts = await _firebaseService.getSoftDeletedProducts();
+      
+      // Hard delete each one
+      for (var product in softDeletedProducts) {
+        await _firebaseService.deleteProduct(product.id);
+        print('Hard deleted previously soft-deleted product: ${product.name}');
+      }
+    } catch (e) {
+      print('Error cleaning up soft-deleted products: $e');
+    }
+  }
+
+  Future<DocumentReference<Map<String, dynamic>>> addCategory(CategoryData category) async {
+    try {
+      return await _categoryService.addCategory(category);
     } catch (e) {
       print('Error adding category: $e');
       rethrow;

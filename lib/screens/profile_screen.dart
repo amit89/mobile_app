@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
+import '../widgets/common_app_bar.dart';
 
 // Remove this line since we're using authProvider.isAdmin now
 
@@ -61,10 +62,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // If user is authenticated, show profile info
     if (authProvider.isAuthenticated) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Profile'),
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
+        appBar: CommonAppBar(
+          title: 'Profile',
           actions: [
             IconButton(
               icon: const Icon(Icons.logout),
@@ -116,10 +115,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // If user is not authenticated, show registration form
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Profile'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+      appBar: const CommonAppBar(
+        title: 'Create Profile',
+        showBackButton: false, // No back button needed here
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../models/product_models.dart';
 import '../providers/cart_provider.dart' as cart;
 import '../providers/product_provider.dart' as products;
+import '../widgets/common_app_bar.dart';
 import 'category_screen.dart';
+import 'everything_category_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('GreenGrab'),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false, // Don't show back button on home screen
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -95,13 +98,77 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          return ListView.builder(
+          // Create a list view with Everything section at the top
+          return ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: productProvider.categories.length,
-            itemBuilder: (context, index) {
-              final category = productProvider.categories[index];
-              return CategorySection(category: category);
-            },
+            children: [
+              // Add the "Everything" section first
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EverythingCategoryScreen(),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Everything",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.green,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Calculate all products
+                  Builder(
+                    builder: (context) {
+                      final allProducts = <ProductData>[];
+                      for (var category in productProvider.categories) {
+                        allProducts.addAll(category.products);
+                      }
+                      // Limit to first 5 products
+                      final displayProducts = allProducts.length > 5 
+                          ? allProducts.sublist(0, 5) 
+                          : allProducts;
+                      
+                      return SizedBox(
+                        height: 200,
+                        child: displayProducts.isEmpty
+                            ? const Center(child: Text('No products available'))
+                            : ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: displayProducts.length,
+                                itemBuilder: (context, index) {
+                                  return ProductCard(product: displayProducts[index]);
+                                },
+                              ),
+                      );
+                    }
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+              // Then add all the regular categories
+              ...productProvider.categories.map((category) => CategorySection(category: category)).toList(),
+            ],
           );
         },
       ),

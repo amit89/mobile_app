@@ -47,11 +47,24 @@ class FirebaseService {
         .update(product.toMap());
   }
 
+  // Get products that were previously soft-deleted (isAvailable = false)
+  Future<List<ProductData>> getSoftDeletedProducts() async {
+    final snapshot = await _firestore
+        .collection('products')
+        .where('isAvailable', isEqualTo: false)
+        .get();
+    
+    return snapshot.docs
+        .map((doc) => ProductData.fromFirebase(doc.data()))
+        .toList();
+  }
+
   // Delete a product
   Future<void> deleteProduct(String productId) {
+    // Perform a hard delete instead of a soft delete
     return _firestore
         .collection('products')
         .doc(productId)
-        .update({'isAvailable': false});
+        .delete();
   }
 }

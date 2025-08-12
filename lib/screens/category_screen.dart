@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart' as providers;
 import '../models/product_models.dart';
+import '../widgets/common_app_bar.dart';
 
 class CategoryScreen extends StatelessWidget {
   final CategoryData category;
@@ -11,10 +12,8 @@ class CategoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(category.name),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+      appBar: CommonAppBar(
+        title: category.name,
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),

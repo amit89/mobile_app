@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart' as cart;
 import '../providers/providers.dart';
+import '../widgets/common_app_bar.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -34,10 +35,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Check if cart is empty
     if (cartProvider.items.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Checkout'),
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
+        appBar: const CommonAppBar(
+          title: 'Checkout',
         ),
         body: const Center(
           child: Text('Your cart is empty'),

@@ -26,14 +26,14 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.shopping_bag,
-              size: 100,
-              color: Colors.white,
+            Image(
+              image: AssetImage('lib/logo/green_grab.jpeg'),
+              width: 150,
+              height: 150,
             ),
             SizedBox(height: 20),
             Text(
-              'Grocery App',
+              'GreenGrab',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
