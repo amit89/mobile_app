@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../widgets/common_app_bar.dart';
+import 'phone_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -147,6 +148,30 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
+              // Phone Login Button
+              const SizedBox(height: 16),
+              const Center(child: Text('OR')),
+              const SizedBox(height: 16),
+              
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PhoneLoginScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.phone),
+                label: const Text('Login with Phone Number'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              
               // Create Profile Link
               TextButton(
                 onPressed: () => context.go('/profile'),

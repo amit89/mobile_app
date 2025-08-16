@@ -38,6 +38,7 @@ dependencies:
   
   # JSON serialization
   json_annotation: ^4.8.1
+  firebase_app_check: ^0.2.2
 
 dev_dependencies:
   flutter_test:

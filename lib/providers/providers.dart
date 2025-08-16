@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 export 'cart_provider.dart';
 
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import '../services/auth_service.dart';
+
 // Auth Provider
 class AuthProvider with ChangeNotifier {
   bool _isAuthenticated = false;
@@ -10,10 +13,10 @@ class AuthProvider with ChangeNotifier {
   String? _userName;
   String? _mobile;
   String? _email;
+  final AuthService _authService = AuthService();
 
   bool get isAdmin => _isAdmin;
-
-  bool get isAuthenticated => _isAuthenticated;
+  bool get isAuthenticated => _isAuthenticated || _authService.isAuthenticated;
   String? get userId => _userId;
   String? get userName => _userName;
   String? get mobile => _mobile;
@@ -29,6 +32,26 @@ class AuthProvider with ChangeNotifier {
       isAdmin: true,
     ),
   };
+
+  // Initialize with current Firebase user if available
+  AuthProvider() {
+    // Initialize with current user if available
+    if (_authService.currentUser != null) {
+      _updateUserFromFirebase(_authService.currentUser!);
+    }
+    
+    // Listen for auth state changes
+    _authService.userStream.listen((firebase_auth.User? user) {
+      if (user != null) {
+        print('AuthProvider: Firebase user signed in: ${user.uid}');
+        _updateUserFromFirebase(user);
+        notifyListeners();
+      } else {
+        print('AuthProvider: Firebase user signed out');
+        // Optionally reset user state if they sign out
+      }
+    });
+  }
 
   void register({
     required String mobile,
@@ -50,6 +73,7 @@ class AuthProvider with ChangeNotifier {
     );
   }
 
+  // Legacy login method (non-Firebase)
   bool login({
     required String emailOrMobile,
     required String password,
@@ -67,13 +91,50 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
-  void logout() {
-    _isAuthenticated = false;
-    _userId = null;
-    _userName = null;
-    _mobile = null;
-    _email = null;
-    notifyListeners();
+  // Login with Firebase user
+  void loginWithFirebaseUser(firebase_auth.User user) {
+    try {
+      _updateUserFromFirebase(user);
+      notifyListeners();
+    } catch (e) {
+      print('Error in loginWithFirebaseUser: $e');
+      // Handle error or rethrow as needed
+    }
+  }
+
+  // Update user data from Firebase user
+  void _updateUserFromFirebase(firebase_auth.User user) {
+    try {
+      _isAuthenticated = true;
+      _userId = user.uid;
+      _mobile = user.phoneNumber;
+      _email = user.email;
+      _userName = user.displayName;
+      
+      // Check if user is admin (you might want to store this in Firestore)
+      _isAdmin = _mobile == '7814260451' || _email == 'admin@greengrab.com';
+      
+      print('Firebase user processed successfully: UID=${_userId}, Phone=${_mobile}');
+    } catch (e) {
+      print('Error processing Firebase user: $e');
+      throw e; // Re-throw to handle in the calling method
+    }
+  }
+
+  // Logout from both Firebase and local state
+  Future<void> logout() async {
+    try {
+      await _authService.signOut();
+    } catch (e) {
+      print('Error signing out from Firebase: $e');
+    } finally {
+      _isAuthenticated = false;
+      _userId = null;
+      _userName = null;
+      _mobile = null;
+      _email = null;
+      notifyListeners();
+    }
   }
 }
 

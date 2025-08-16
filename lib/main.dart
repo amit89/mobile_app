@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -11,12 +12,25 @@ import 'screens/checkout_screen.dart';
 import 'screens/admin_screen.dart';
 import 'providers/cart_provider.dart' as cart;
 import 'providers/providers.dart';
+import 'providers/providers.dart' show AuthProvider;
 import 'providers/product_provider.dart' as products;
+
+import 'services/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // Temporarily disable Firebase App Check until API is enabled
+    // Uncomment once App Check API is enabled in Google Cloud Console
+    // await FirebaseAppCheck.instance.activate(
+    //   androidProvider: AndroidProvider.debug,
+    //   appleProvider: AppleProvider.debug,
+    // );
+    
     print('Firebase initialized successfully');
   } catch (e) {
     print('Error initializing Firebase: $e');
@@ -25,7 +39,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        // First, create the ProductProvider
+        // Auth Provider should be first
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+        ),
+        // Then, create the ProductProvider
         ChangeNotifierProvider(
           create: (_) => products.ProductProvider(),
         ),

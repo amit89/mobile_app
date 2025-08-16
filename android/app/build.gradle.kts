@@ -47,7 +47,7 @@ flutter {
 
 dependencies {
     // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
+    implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
 
     // When using the BoM, you don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
