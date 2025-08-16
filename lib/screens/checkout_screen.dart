@@ -90,6 +90,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         title: const Text('Checkout'),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.go('/home'),
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -264,7 +270,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Delivery Fee:'),
-                        Text('₹40.00'),
+                        Text('₹0.00'),
                       ],
                     ),
                     const Divider(height: 24),
@@ -276,7 +282,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          '₹${(cartProvider.totalAmount + 40).toStringAsFixed(2)}',
+                          '₹${cartProvider.totalAmount.toStringAsFixed(2)}',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -314,7 +320,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             child: Text(
-              'Place Order - ₹${(cartProvider.totalAmount + 40).toStringAsFixed(2)}',
+              'Place Order - ₹${cartProvider.totalAmount.toStringAsFixed(2)}',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

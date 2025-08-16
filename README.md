@@ -1,6 +1,19 @@
 # GreenGrab - Grocery Delivery App
 
-GreenGrab is a Flutter-based mobile application for grocery shopping and delivery, similar to Zepto/Blinkit. The app features a clean and intuitive interface for browsing products, managing cart, and placing orders.
+GreenGrab is a Flutter-based mobile applicat3. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+
+4. Set up Firebase configuration:
+   - Copy the template file: `lib/config/firebase_config.template.dart` to `lib/config/firebase_config.dart`
+   - Fill in your Firebase credentials in the new file
+   - Note: `firebase_config.dart` is in `.gitignore` and won't be committed to version control
+
+5. Run the app:
+   ```bash
+   flutter run
+   ```rocery shopping and delivery, similar to Zepto/Blinkit. The app features a clean and intuitive interface for browsing products, managing cart, and placing orders.
 
 ## Features
 
@@ -134,6 +147,8 @@ my_first_app/
 │   ├── providers/          # State management
 │   │   └── providers.dart
 │   ├── models/            # Data models
+│   ├── services/          # Service layer
+│   ├── config/            # Configuration files
 │   └── widgets/           # Reusable widgets
 ├── assets/                # Images and fonts
 ├── test/                 # Test files
