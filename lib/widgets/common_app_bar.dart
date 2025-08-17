@@ -16,7 +16,17 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title),
+      title: Row(
+        children: [
+          Image.asset(
+            'lib/logo/green_grab.jpeg',
+            width: 32,
+            height: 32,
+          ),
+          const SizedBox(width: 8),
+          Text(title),
+        ],
+      ),
       backgroundColor: Theme.of(context).primaryColor,
       foregroundColor: Colors.white,
       leading: showBackButton 

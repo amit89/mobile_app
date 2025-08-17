@@ -1,0 +1,7 @@
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "lib/logo/green_grab.jpeg"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "lib/logo/green_grab.jpeg"
+  remove_alpha_ios: true

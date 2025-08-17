@@ -36,7 +36,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('GreenGrab'),
+        title: Row(
+          children: [
+            Image.asset(
+              'lib/logo/green_grab.jpeg',
+              width: 32,
+              height: 32,
+            ),
+            const SizedBox(width: 8),
+            const Text('GreenGrab'),
+          ],
+        ),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false, // Don't show back button on home screen
