@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../widgets/common_app_bar.dart';
 import 'phone_login_screen.dart';
+import '../config/config.dart';
+
+// Define the enum at the top level
+enum LoginMode { selection, admin, retail }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,43 +17,235 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  LoginMode _loginMode = LoginMode.selection;
+  
   final _formKey = GlobalKey<FormState>();
-  final _emailOrMobileController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _emailOrMobileController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _submitForm(BuildContext context) {
+  void _submitAdminLoginForm(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = authProvider.login(
-        emailOrMobile: _emailOrMobileController.text,
-        password: _passwordController.text,
-      );
+      
+      // For admin, only allow specific phone number and password from config
+      if (FirebaseConfig.validateAdminCredentials(
+          phoneOrEmail: _phoneController.text, 
+          password: _passwordController.text)) {
+        final success = authProvider.login(
+          emailOrMobile: _phoneController.text,
+          password: _passwordController.text,
+        );
 
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.go('/home');
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Admin login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/home');
+        } else {
+          setState(() {
+            _errorMessage = 'Authentication failed. Please try again.';
+          });
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid credentials. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _errorMessage = 'Invalid admin credentials. Only authorized admin users can login.';
+        });
       }
     }
+  }
+  
+  void _goToRetailUserLogin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PhoneLoginScreen(),
+      ),
+    );
+  }
+  
+  void _resetToSelectionMode() {
+    setState(() {
+      _loginMode = LoginMode.selection;
+      _errorMessage = null;
+      _phoneController.clear();
+      _passwordController.clear();
+    });
+  }
+
+  Widget _buildLoginOptionsScreen() {
+    return Column(
+      children: [
+        const Text(
+          'Choose Login Type',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 30),
+        
+        // Admin Login Option
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              _loginMode = LoginMode.admin;
+            });
+          },
+          icon: const Icon(Icons.admin_panel_settings),
+          label: const Text('Login as Admin User'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 16),
+        const Center(child: Text('OR')),
+        const SizedBox(height: 16),
+        
+        // Retail User Login Option
+        ElevatedButton.icon(
+          onPressed: _goToRetailUserLogin,
+          icon: const Icon(Icons.person),
+          label: const Text('Login as Retail User'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+  
+  Widget _buildAdminLoginForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Admin Login',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          
+          // Phone Number Field
+          TextFormField(
+            controller: _phoneController,
+            decoration: const InputDecoration(
+              labelText: 'Phone Number',
+              hintText: 'Enter admin phone number',
+              prefixIcon: Icon(Icons.phone),
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.phone,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter admin phone number';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Password Field
+          TextFormField(
+            controller: _passwordController,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              hintText: 'Enter admin password',
+              prefixIcon: const Icon(Icons.lock),
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _isPasswordVisible 
+                    ? Icons.visibility_off 
+                    : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
+              ),
+            ),
+            obscureText: !_isPasswordVisible,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter admin password';
+              }
+              return null;
+            },
+          ),
+          
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            
+          const SizedBox(height: 24),
+
+          // Login Button
+          ElevatedButton(
+            onPressed: () => _submitAdminLoginForm(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Login',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Back to selection
+          TextButton(
+            onPressed: _resetToSelectionMode,
+            child: const Text('Back to Login Options'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -61,124 +257,33 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo or App Name
-              const SizedBox(height: 40),
-              Text(
-                'GreenGrab',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Logo or App Name
+            const SizedBox(height: 40),
+            Text(
+              'GreenGrab',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
               ),
-              const SizedBox(height: 40),
+            ),
+            const SizedBox(height: 40),
 
-              // Email/Mobile Field
-              TextFormField(
-                controller: _emailOrMobileController,
-                decoration: const InputDecoration(
-                  labelText: 'Email or Mobile Number',
-                  hintText: 'Enter your email or mobile number',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email or mobile number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Password Field
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible 
-                        ? Icons.visibility_off 
-                        : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
-                  ),
-                ),
-                obscureText: !_isPasswordVisible,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // Login Button
-              ElevatedButton(
-                onPressed: () => _submitForm(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  'Login',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              // Phone Login Button
-              const SizedBox(height: 16),
-              const Center(child: Text('OR')),
-              const SizedBox(height: 16),
+            if (_loginMode == LoginMode.selection) 
+              _buildLoginOptionsScreen()
+            else if (_loginMode == LoginMode.admin) 
+              _buildAdminLoginForm(),
               
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PhoneLoginScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.phone),
-                label: const Text('Login with Phone Number'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              
-              // Create Profile Link
-              TextButton(
-                onPressed: () => context.go('/profile'),
-                child: const Text("Don't have an account? Create Profile"),
-              ),
-            ],
-          ),
+            // Return to home link
+            TextButton(
+              onPressed: () => context.go('/home'),
+              child: const Text('Continue shopping without login'),
+            ),
+          ],
         ),
       ),
     );

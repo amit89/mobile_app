@@ -76,8 +76,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: const Text('Login'),
               ),
               TextButton(
-                onPressed: () => context.go('/profile'),
-                child: const Text('Create Profile'),
+                onPressed: () => context.go('/login'),
+                child: const Text('Register'),
               ),
             ],
           ),

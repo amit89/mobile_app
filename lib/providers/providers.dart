@@ -4,6 +4,7 @@ export 'cart_provider.dart';
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../services/auth_service.dart';
+import '../config/config.dart';
 
 // Auth Provider
 class AuthProvider with ChangeNotifier {
@@ -22,13 +23,13 @@ class AuthProvider with ChangeNotifier {
   String? get mobile => _mobile;
   String? get email => _email;
 
-  // Store user credentials (in a real app, this would be in a secure storage)
+  // Store user credentials (imported from firebase_config.dart)
   final Map<String, UserCredentials> _users = {
-    '7814260451': UserCredentials(
-      userId: 'admin_user',
-      mobile: '7814260451',
-      email: 'admin@greengrab.com',
-      password: '123456',
+    FirebaseConfig.adminMobile: UserCredentials(
+      userId: FirebaseConfig.adminUserId,
+      mobile: FirebaseConfig.adminMobile,
+      email: FirebaseConfig.adminEmail,
+      password: FirebaseConfig.adminPassword,
       isAdmin: true,
     ),
   };
@@ -111,8 +112,8 @@ class AuthProvider with ChangeNotifier {
       _email = user.email;
       _userName = user.displayName;
       
-      // Check if user is admin (you might want to store this in Firestore)
-      _isAdmin = _mobile == '7814260451' || _email == 'admin@greengrab.com';
+      // Check if user is admin using admin config
+      _isAdmin = _mobile == FirebaseConfig.adminMobile || _email == FirebaseConfig.adminEmail;
       
       print('Firebase user processed successfully: UID=${_userId}, Phone=${_mobile}');
     } catch (e) {

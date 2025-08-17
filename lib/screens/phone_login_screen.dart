@@ -128,7 +128,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CommonAppBar(title: 'Phone Login'),
+      appBar: const CommonAppBar(title: 'Retail User Login'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -144,10 +144,20 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
+                  color: Colors.green,
                 ),
               ),
               const SizedBox(height: 40),
+
+              const Text(
+                'Retail User Login',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
 
               Text(
                 'Enter your phone number to receive a verification code',
@@ -196,7 +206,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _sendOtp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -219,7 +229,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: const Text('Use Email Login Instead'),
+                child: const Text('Back to Login Options'),
               ),
             ],
           ),

@@ -131,7 +131,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
+                  color: Colors.green,
                 ),
               ),
               const SizedBox(height: 16),
@@ -181,7 +181,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _verifyOtp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

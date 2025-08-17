@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/product_models.dart';
 import '../providers/cart_provider.dart' as cart;
 import '../providers/product_provider.dart' as products;
+import '../providers/providers.dart' show AuthProvider;
 import '../widgets/common_app_bar.dart';
 import 'category_screen.dart';
 import 'everything_category_screen.dart';
@@ -195,6 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         currentIndex: 0,
         onTap: (index) {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
           switch (index) {
             case 0:
               // Already on home
@@ -203,7 +205,13 @@ class _HomeScreenState extends State<HomeScreen> {
               context.go('/cart');
               break;
             case 2:
-              context.go('/profile');
+              // Check if user is logged in
+              if (authProvider.isAuthenticated) {
+                context.go('/profile');
+              } else {
+                // Redirect to login screen if not authenticated
+                context.go('/login');
+              }
               break;
           }
         },
