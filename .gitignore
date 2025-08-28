@@ -46,3 +46,5 @@ app.*.map.json
 
 # Firebase configuration
 lib/config/firebase_config.dart
+# Sensitive configuration files
+lib/config/dev_config.dart

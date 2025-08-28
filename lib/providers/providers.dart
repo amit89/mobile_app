@@ -5,9 +5,12 @@ export 'cart_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../services/auth_service.dart';
 import '../config/config.dart';
+import '../services/secure_config_service.dart';
 
 // Auth Provider
 class AuthProvider with ChangeNotifier {
+  // Secure configuration service
+  final SecureConfigService _secureConfig = SecureConfigService();
   bool _isAuthenticated = false;
   bool _isAdmin = false;
   String? _userId;

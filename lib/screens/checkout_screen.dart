@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart' as cart;
 import '../providers/providers.dart';
+import '../providers/location_provider.dart';
 import '../widgets/common_app_bar.dart';
+import '../widgets/location_widgets.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -18,6 +20,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _pinCodeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillLocationData();
+  }
+
+  Future<void> _prefillLocationData() async {
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    
+    // Prefill address and pincode if available
+    if (locationProvider.address != null && locationProvider.address!.isNotEmpty) {
+      _addressController.text = locationProvider.address!;
+    }
+    
+    if (locationProvider.pincode != null && locationProvider.pincode!.isNotEmpty) {
+      _pinCodeController.text = locationProvider.pincode!;
+    }
+  }
 
   @override
   void dispose() {
@@ -128,6 +149,59 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+              
+              // Location display section
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Delivery Location',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const LocationDisplay(),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () async {
+                              final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+                              await locationProvider.getCurrentLocation();
+                              
+                              // Update text fields with new location data
+                              if (locationProvider.address != null && locationProvider.address!.isNotEmpty) {
+                                _addressController.text = locationProvider.address!;
+                              }
+                              
+                              if (locationProvider.pincode != null && locationProvider.pincode!.isNotEmpty) {
+                                _pinCodeController.text = locationProvider.pincode!;
+                              }
+                            },
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.my_location, size: 16),
+                                SizedBox(width: 4),
+                                Text('Use current location'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
               const SizedBox(height: 16),
               
               // Address Field

@@ -5,7 +5,9 @@ import '../models/product_models.dart';
 import '../providers/cart_provider.dart' as cart;
 import '../providers/product_provider.dart' as products;
 import '../providers/providers.dart' show AuthProvider;
+import '../providers/location_provider.dart';
 import '../widgets/common_app_bar.dart';
+import '../widgets/location_widgets.dart';
 import 'category_screen.dart';
 import 'everything_category_screen.dart';
 
@@ -35,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final locationProvider = Provider.of<LocationProvider>(context);
+    
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -47,6 +51,35 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             const Text('GreenGrab'),
           ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.location_on,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                if (locationProvider.pincode != null)
+                  Expanded(
+                    child: Text(
+                      'Deliver to: ${locationProvider.pincode}',
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                else
+                  TextButton(
+                    onPressed: () => locationProvider.requestLocationPermission(),
+                    child: const Text('Set delivery location'),
+                  ),
+              ],
+            ),
+          ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,

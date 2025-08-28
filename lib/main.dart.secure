@@ -1,0 +1,73 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+
+// Import screens
+import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/cart_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/checkout_screen.dart';
+import 'screens/admin_screen.dart';
+
+// Import providers
+import 'providers/cart_provider.dart' as cart;
+import 'providers/providers.dart';
+import 'providers/product_provider.dart' as products;
+
+// Import configuration
+import 'config/config_bootstrap.dart';
+import 'config/secure_firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Initialize secure config first
+    await ConfigBootstrap.initialize();
+    
+    // Now use the secure config to initialize Firebase
+    await Firebase.initializeApp(
+      options: await SecureFirebaseOptions.getCurrentPlatformOptions(),
+    );
+    
+    // Firebase App Check can also be enabled after bootstrap is complete
+    // await FirebaseAppCheck.instance.activate(
+    //   androidProvider: AndroidProvider.playIntegrity,
+    //   appleProvider: AppleProvider.appAttest,
+    // );
+    
+    print('Firebase initialized successfully with secure configuration');
+  } catch (e) {
+    print('Error initializing Firebase: $e');
+  }
+  
+  runApp(
+    MultiProvider(
+      providers: [
+        // Auth Provider should be first
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+        ),
+        // Then, create the ProductProvider
+        ChangeNotifierProvider(
+          create: (_) => products.ProductProvider(),
+        ),
+        // Then, create the CartProvider using the ProductProvider
+        ChangeNotifierProxyProvider<products.ProductProvider, cart.CartProvider>(
+          create: (_) => cart.CartProvider(),
+          update: (_, productProvider, previousCartProvider) {
+            final cartProvider = previousCartProvider ?? cart.CartProvider();
+            cartProvider.setProductProvider(productProvider);
+            print('Main: Setting ProductProvider in CartProvider');
+            return cartProvider;
+          },
+        ),
+      ],
+      child: MyApp(),
+    ),
+  );
+}

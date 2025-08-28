@@ -14,6 +14,7 @@ import 'providers/cart_provider.dart' as cart;
 import 'providers/providers.dart';
 import 'providers/providers.dart' show AuthProvider;
 import 'providers/product_provider.dart' as products;
+import 'providers/location_provider.dart';
 
 import 'services/firebase_options.dart';
 
@@ -59,6 +60,10 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(),
+        ),
+        // Location Provider
+        ChangeNotifierProvider(
+          create: (_) => LocationProvider(),
         ),
       ],
       child: MyApp(),

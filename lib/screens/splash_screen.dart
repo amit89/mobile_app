@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/location_provider.dart';
+import '../widgets/location_widgets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,13 +12,38 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _showLocationRequest = false;
+  
   @override
   void initState() {
     super.initState();
-    // Navigate to home after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      context.go('/home');
-    });
+    _checkLocationAndNavigate();
+  }
+  
+  Future<void> _checkLocationAndNavigate() async {
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    await locationProvider.init();
+    
+    // Wait a bit to show the splash screen
+    await Future.delayed(const Duration(seconds: 1));
+    
+    if (!locationProvider.isLocationPermissionGranted) {
+      // Show location permission request
+      debugPrint('SplashScreen: Location permission not granted, showing request dialog');
+      setState(() {
+        _showLocationRequest = true;
+      });
+    } else {
+      // If permission already granted, get location and navigate
+      debugPrint('SplashScreen: Location permission already granted, proceeding to home');
+      await locationProvider.getCurrentLocation();
+      _navigateToHome();
+    }
+  }
+  
+  void _navigateToHome() {
+    debugPrint('SplashScreen: Navigating to home');
+    context.go('/home');
   }
 
   @override
@@ -57,6 +85,34 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white70,
               ),
             ),
+            if (_showLocationRequest) ...[
+              const SizedBox(height: 20),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 30),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  children: [
+                    LocationPermissionWidget(
+                      onPermissionGranted: _navigateToHome,
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _navigateToHome,
+                      child: const Text('Skip for now'),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 20),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ],
           ],
         ),
       ),
