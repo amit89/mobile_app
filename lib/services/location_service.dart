@@ -41,10 +41,38 @@ class LocationService extends ChangeNotifier {
     notifyListeners();
     
     try {
-      LocationPermission permission = await Geolocator.requestPermission();
+      // First check if we can request permissions
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Location services are not enabled
+        return false;
+      }
       
-      if (permission == LocationPermission.denied || 
-          permission == LocationPermission.deniedForever) {
+      // Check current permission status
+      LocationPermission permission = await Geolocator.checkPermission();
+      
+      // If denied, request permission
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return false;
+        }
+      }
+      
+      // Request always permission on iOS
+      // Note: On Android, this is handled through the manifest
+      if (permission == LocationPermission.whileInUse) {
+        try {
+          // On iOS this will show the "Always Allow" permission dialog
+          permission = await Geolocator.requestPermission();
+        } catch (e) {
+          // Handle errors or unsupported platforms
+          debugPrint('Error requesting always permission: $e');
+        }
+      }
+      
+      // Update permission state
+      if (permission == LocationPermission.deniedForever) {
         _isLocationPermissionGranted = false;
       } else {
         _isLocationPermissionGranted = true;

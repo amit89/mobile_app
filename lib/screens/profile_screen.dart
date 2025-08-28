@@ -62,9 +62,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'Email: ${authProvider.email}',
               style: const TextStyle(fontSize: 16),
             ),
+            const SizedBox(height: 32),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Order History'),
+              subtitle: const Text('View your past orders'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                context.go('/order-history');
+              },
+            ),
+            const Divider(),
             if (authProvider.isAdmin) ...[
-              const SizedBox(height: 32),
-              const Divider(),
               ListTile(
                 leading: const Icon(Icons.admin_panel_settings),
                 title: const Text('Admin Panel'),

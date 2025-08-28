@@ -56,6 +56,20 @@ class AuthProvider with ChangeNotifier {
       }
     });
   }
+  
+  // Initialize auth state - check persistent login
+  Future<void> initializeAuthState() async {
+    bool isAuthenticatedPersistently = await _authService.initAuthState();
+    
+    if (isAuthenticatedPersistently) {
+      if (_authService.currentUser != null) {
+        _updateUserFromFirebase(_authService.currentUser!);
+      }
+      
+      _isAuthenticated = true;
+      notifyListeners();
+    }
+  }
 
   void register({
     required String mobile,

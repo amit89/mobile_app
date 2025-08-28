@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -11,6 +12,18 @@ class AuthService {
 
   // Check if user is authenticated
   bool get isAuthenticated => _auth.currentUser != null;
+  
+  // Initialize auth state
+  Future<bool> initAuthState() async {
+    // If Firebase already has a user, we're already authenticated
+    if (_auth.currentUser != null) {
+      return true;
+    }
+    
+    // Check if we have stored user credentials
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('user_authenticated') ?? false;
+  }
   
   // Phone sign-in
   Future<void> verifyPhoneNumber({
@@ -61,6 +74,10 @@ class AuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       print('AuthService: Sign in successful, user ID: ${userCredential.user?.uid}');
       
+      // Store login state in persistent storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('user_authenticated', true);
+      
       return userCredential;
     } catch (e) {
       print('AuthService: Error in verifyOTPAndLogin: $e');
@@ -77,5 +94,9 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
+    
+    // Clear the stored authentication state
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('user_authenticated', false);
   }
 }

@@ -10,6 +10,8 @@ import 'screens/cart_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/checkout_screen.dart';
 import 'screens/admin_screen.dart';
+import 'screens/order_history_screen.dart';
+import 'screens/order_details_screen.dart';
 import 'providers/cart_provider.dart' as cart;
 import 'providers/providers.dart';
 import 'providers/providers.dart' show AuthProvider;
@@ -33,6 +35,10 @@ void main() async {
     // );
     
     print('Firebase initialized successfully');
+    
+    // Check for persistent login
+    final authService = AuthProvider();
+    await authService.initializeAuthState();
   } catch (e) {
     print('Error initializing Firebase: $e');
   }
@@ -72,8 +78,6 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  
   MyApp({super.key});
 
   final GoRouter _router = GoRouter(
@@ -110,6 +114,17 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/admin',
         builder: (context, state) => const AdminScreen(),
+      ),
+      GoRoute(
+        path: '/order-history',
+        builder: (context, state) => const OrderHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/order-details/:id',
+        builder: (context, state) {
+          final orderId = state.pathParameters['id']!;
+          return OrderDetailsScreen(orderId: orderId);
+        },
       ),
     ],
   );

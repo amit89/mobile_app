@@ -7,6 +7,8 @@ import '../providers/providers.dart';
 import '../providers/location_provider.dart';
 import '../widgets/common_app_bar.dart';
 import '../widgets/location_widgets.dart';
+import '../services/order_service.dart';
+import '../models/order_model.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -372,17 +374,67 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (_formKey.currentState!.validate()) {
-                // TODO: Process the order
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Order placed successfully!'),
-                    backgroundColor: Colors.green,
-                  ),
+                // Get auth provider to get user ID
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final cartProvider = Provider.of<cart.CartProvider>(context, listen: false);
+                
+                // Initialize order service
+                final orderService = OrderService();
+                
+                // Create order items from cart
+                final orderItems = cartProvider.items.values.map((item) => 
+                  OrderItem(
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                    unit: item.unit,
+                    quantity: item.quantity,
+                    total: item.total,
+                  )
+                ).toList();
+                
+                // Create order object
+                final order = UserOrder(
+                  id: '', // Will be set by Firestore
+                  userId: authProvider.userId!,
+                  items: orderItems,
+                  totalAmount: cartProvider.totalAmount,
+                  orderDate: DateTime.now(),
+                  deliveryAddress: _addressController.text,
+                  name: _nameController.text,
+                  pinCode: _pinCodeController.text,
+                  paymentMethod: 'Cash on Delivery',
+                  status: 'Pending',
                 );
-                cartProvider.clear();
-                context.go('/home');
+                
+                try {
+                  // Save order to Firestore
+                  await orderService.createOrder(order);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Order placed successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  
+                  // Clear cart after successful order
+                  cartProvider.clear();
+                  
+                  // Navigate to home screen
+                  context.go('/home');
+                } catch (e) {
+                  print('Error placing order: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to place order: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

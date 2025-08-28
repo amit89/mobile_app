@@ -49,5 +49,7 @@
 	<string>This app needs access to your location to provide accurate delivery information and determine your pincode.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to your location to provide accurate delivery information and determine your pincode.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs permanent access to your location to provide accurate delivery information and determine your pincode at all times.</string>
 </dict>
 </plist>
